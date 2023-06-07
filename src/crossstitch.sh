@@ -92,7 +92,7 @@ then
   then
     echo "Refining SVs"
     #$BINDIR/../RefineInsertions/rebuild_external.sh
-    $BINDIR/../Iris/build.sh
+    #$BINDIR/../Iris/build.sh
     java -cp $BINDIR/../Iris/src Iris genome_in=$GENOME vcf_in=$STRUCTURALVARIANTS reads_in=$LONGREADSBAM vcf_out=$OUTPREFIX.refined.vcf threads=12
   fi
 else
