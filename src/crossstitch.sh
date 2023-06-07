@@ -28,13 +28,9 @@ KARYOTYPE=$6
 REFINE=$7
 
 VCF2DIPLOIDJAR=$BINDIR/../vcf2diploid/vcf2diploid.jar
-EXTRACTHAIRS=/work-zfs/mschatz1/mkirsche/github/HapCUT2/build/extractHAIRS
+EXTRACTHAIRS=extractHAIRS
 GZIP=pigz
 
-if [ $USER = "mschatz" ]
-then
-  EXTRACTHAIRS=extractHAIRS
-fi
 
 echo "crossstich.sh"
 echo "  BINDIR: $BINDIR"
@@ -87,9 +83,9 @@ GENOME="$(cd "$(dirname "$GENOME")" ; pwd -P)/$(basename $GENOME)"
 AS=$OUTPREFIX.alleleseq
 VCFID=`head -5000 $PHASEDSNPS | grep '#CHROM' | awk '{print $10}'`
 
-javac $BINDIR/*.java
+#javac $BINDIR/*.java
 
-
+# run Iris
 if [[ $REFINE == "1" ]]
 then 
   if [ ! -r $OUTPREFIX.refined.vcf ]
@@ -107,6 +103,13 @@ else
   fi
 fi
 
+# rmeove invalid variants
+if [ ! -r $OUTPREFIX.scrubbed.vcf ]
+then
+  echo "Scrubbing SV calls"
+  (java -cp $BINDIR RemoveInvalidVariants $OUTPREFIX.refined.vcf $OUTPREFIX.scrubbed.vcf) >& $OUTPREFIX.scrubbed.log
+fi
+
 # add code from Jonas to concatenate SNPs and SVs
 echo $OUTPREFIX > samples
 bcftools reheader -s samples $PHASEDSNPS | bcftools view -o $OUTPREFIX.scrubbed.reheader.snv.indel.vcf.gz 
@@ -116,13 +119,6 @@ bcftools index $OUTPREFIX.scrubbed.reheader.svs.vcf.gz
 bcftools concat -a -o $OUTPREFIX.spliced.vcf $OUTPREFIX.scrubbed.reheader.snv.indel.vcf.gz $OUTPREFIX.scrubbed.reheader.svs.vcf.gz
 
 
-if [ ! -r $OUTPREFIX.scrubbed.vcf ]
-then
-  echo "Scrubbing SV calls"
-  (java -cp $BINDIR RemoveInvalidVariants $OUTPREFIX.refined.vcf $OUTPREFIX.scrubbed.vcf) >& $OUTPREFIX.scrubbed.log
-fi
-
- 
 # skip, since I will phase them mysels
 #if [ ! -r $OUTPREFIX.spliced.vcf ]
 #then
