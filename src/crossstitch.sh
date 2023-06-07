@@ -89,16 +89,6 @@ VCFID=`head -5000 $PHASEDSNPS | grep '#CHROM' | awk '{print $10}'`
 
 javac $BINDIR/*.java
 
-if [ ! -r $OUTPREFIX.hairs ]
-then
-  if [ ! -r $PHASEDSNPS.prehairs ]
-  then
-    echo "preprocessing phased snps to remove haplotype genotype calls"
-    java -cp "${BINDIR}" RemoveStrayHairs $PHASEDSNPS $PHASEDSNPS.prehairs
-  fi
-  echo "extracting pacbio-hairs from phased snps (mbq 4)"
-  $EXTRACTHAIRS --mbq 4 --bam $LONGREADSBAM --VCF $PHASEDSNPS.prehairs --out $OUTPREFIX.hairs
-fi
 
 if [[ $REFINE == "1" ]]
 then 
@@ -117,17 +107,31 @@ else
   fi
 fi
 
+# add code from Jonas to concatenate SNPs and SVs
+echo $OUTPREFIX > samples
+bcftools reheader -s samples $PHASEDSNPS | bcftools view -o $OUTPREFIX.scrubbed.reheader.snv.indel.vcf.gz 
+bcftools reheader -s samples $OUTPREFIX.scrubbed.vcf | bcftools view -o $OUTPREFIX.scrubbed.reheader.svs.vcf.gz 
+bcftools index $OUTPREFIX.scrubbed.reheader.snv.indel.vcf.gz 
+bcftools index $OUTPREFIX.scrubbed.reheader.svs.vcf.gz
+bcftools concat -a -o $OUTPREFIX.spliced.vcf $OUTPREFIX.scrubbed.reheader.snv.indel.vcf.gz $OUTPREFIX.scrubbed.reheader.svs.vcf.gz
+
+
 if [ ! -r $OUTPREFIX.scrubbed.vcf ]
 then
   echo "Scrubbing SV calls"
   (java -cp $BINDIR RemoveInvalidVariants $OUTPREFIX.refined.vcf $OUTPREFIX.scrubbed.vcf) >& $OUTPREFIX.scrubbed.log
 fi
 
-if [ ! -r $OUTPREFIX.spliced.vcf ]
-then
-  echo "Splicing in phased SVs"
-  java -cp $BINDIR PhaseSVs $PHASEDSNPS $OUTPREFIX.scrubbed.vcf $OUTPREFIX.hairs $OUTPREFIX.spliced.vcf $GENOME >& $OUTPREFIX.spliced.log
-fi
+ 
+# skip, since I will phase them mysels
+#if [ ! -r $OUTPREFIX.spliced.vcf ]
+#then
+#  echo "Splicing in phased SVs"
+#  java -cp $BINDIR PhaseSVs $PHASEDSNPS $OUTPREFIX.scrubbed.vcf $OUTPREFIX.hairs $OUTPREFIX.spliced.vcf $GENOME >& $OUTPREFIX.spliced.log
+#fi
+
+# copy file to have an input for next step
+cp $OUTPREFIX.scrubbed.vcf $OUTPREFIX.spliced.vcf
 
 if [ ! -r $OUTPREFIX.spliced.scrubbed.vcf ]
 then
@@ -151,11 +155,11 @@ then
   popd
 fi
 
-if [ ! -r $AS.raw.tgz ]
-then
-  echo "tarring up alleleseq"
-  tar czvf $AS.raw.tgz $AS
-fi
+#if [ ! -r $AS.raw.tgz ]
+#then
+#  echo "tarring up alleleseq"
+#  tar czvf $AS.raw.tgz $AS
+#fi
 
 if [ ! -r $AS/raw/ ]
 then
