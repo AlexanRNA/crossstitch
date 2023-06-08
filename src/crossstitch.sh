@@ -9,7 +9,7 @@ then
   echo ""
   echo "Details:"
   echo "  phased_snps.vcf:                   VCF file of phased SNP and indel variants. Recommend LongRanger (10X only) or HapCUT2 (HiC and/or 10X)"
-  echo "  unphased_structural_variants.vcf:  VCF file of structural variants identified using Sniffles"
+  echo "  phased_structural_variants.vcf:  VCF file of phased structural variants identified using Sniffles"
   echo "  long_reads.bam:                    BAM file of long reads aligned with NGMLR"
   echo "  genome.fa:                         Reference genome used"
   echo "  outputprefix:                      Prefix for output files"
@@ -93,7 +93,7 @@ then
     echo "Refining SVs"
     #$BINDIR/../RefineInsertions/rebuild_external.sh
     #$BINDIR/../Iris/build.sh
-    java -cp $BINDIR/../Iris/src Iris genome_in=$GENOME vcf_in=$STRUCTURALVARIANTS reads_in=$LONGREADSBAM vcf_out=$OUTPREFIX.refined.vcf threads=12
+    java -cp $BINDIR/../Iris/src Iris genome_in=$GENOME vcf_in=$STRUCTURALVARIANTS reads_in=$LONGREADSBAM vcf_out=$OUTPREFIX.unsorted.refined.vcf threads=12
   fi
 else
   if [ ! -r $OUTPREFIX.refined.vcf ]
@@ -102,6 +102,8 @@ else
     cp $STRUCTURALVARIANTS $OUTPREFIX.refined.vcf
   fi
 fi
+
+bcftools sort -o $OUTPREFIX.refined.vcf $OUTPREFIX.unsorted.refined.vcf
 
 # rmeove invalid variants
 if [ ! -r $OUTPREFIX.scrubbed.vcf ]
