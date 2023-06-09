@@ -19,7 +19,7 @@ public class CorrectSVs {
 	static int MAX_SV_LEN = 100000;
 
 	// The path to the samtools executable
-	static String SAMTOOLS_PATH = "/Users/u0157043/software/samtools-1.17/bin/samtools";
+	static String SAMTOOLS_PATH = "samtools";
 
 	// Usage message if running the program incorrectly
 	static String USAGE = " phased.vcf "
