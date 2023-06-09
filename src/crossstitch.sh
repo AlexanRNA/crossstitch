@@ -103,6 +103,7 @@ else
   fi
 fi
 
+# sort the vcf before it goes to RemoveInvalidVariants to avoid errors
 bcftools sort -o $OUTPREFIX.refined.vcf $OUTPREFIX.unsorted.refined.vcf
 
 # rmeove invalid variants
