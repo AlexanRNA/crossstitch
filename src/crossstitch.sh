@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO add sed for svtype change and add correctSVs to the pipeline
+
 #set -xv
 set -e
 
@@ -122,12 +124,13 @@ bcftools index $OUTPREFIX.scrubbed.reheader.svs.vcf.gz
 bcftools concat -a -o $OUTPREFIX.spliced.vcf $OUTPREFIX.scrubbed.reheader.snv.indel.vcf.gz $OUTPREFIX.scrubbed.reheader.svs.vcf.gz
 
 
-# skip, since I will phase them mysels
+# skip, since I will phase them myself
 #if [ ! -r $OUTPREFIX.spliced.vcf ]
 #then
 #  echo "Splicing in phased SVs"
 #  java -cp $BINDIR PhaseSVs $PHASEDSNPS $OUTPREFIX.scrubbed.vcf $OUTPREFIX.hairs $OUTPREFIX.spliced.vcf $GENOME >& $OUTPREFIX.spliced.log
 #fi
+
 
 # copy file to have an input for next step
 cp $OUTPREFIX.scrubbed.vcf $OUTPREFIX.spliced.vcf
