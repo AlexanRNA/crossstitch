@@ -86,6 +86,10 @@ VCFID=`head -5000 $PHASEDSNPS | grep '#CHROM' | awk '{print $10}'`
 
 #javac $BINDIR/*.java
 
+# create dummy file for CorrectSVs to be able to run
+echo "Creating blank output VCF" 
+touch $OUTPREFIX.corrected.vcf
+
 # run CorrectSVs to correct the insertion and duplication alt calls
 if [ ! -r $OUTPREFIX.corrected.vcf ]
 then
