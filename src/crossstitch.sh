@@ -91,11 +91,10 @@ echo "Creating blank output VCF"
 touch $OUTPREFIX.corrected.vcf
 
 # run CorrectSVs to correct the insertion and duplication alt calls
-if [ ! -r $OUTPREFIX.corrected.vcf ]
-then
-  echo "Correcting SV calls"
-  java -cp $BINDIR CorrectSVs $STRUCTURALVARIANTS $OUTPREFIX.corrected.vcf $GENOME >& $OUTPREFIX.corrected.log
-fi
+
+echo "Correcting SV calls"
+java -cp $BINDIR CorrectSVs $STRUCTURALVARIANTS $OUTPREFIX.corrected.vcf $GENOME >& $OUTPREFIX.corrected.log
+
 
 # run sed to replace svtype DUP by svtype INS, so they are not removed
 echo "Changing duplications to insertions"
