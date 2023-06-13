@@ -44,13 +44,13 @@ public class CorrectSVs {
 
 			if(!new File(args[1]).exists())
 			{
-				System.out.println("Invalid HapCUT2 fragment file: " + args[1]);
+				System.out.println("Invalid output VCF file: " + args[1]);
 				System.exit(1);
 			}
 
 			if(!new File(args[2]).exists())
 			{
-				System.out.println("Invalid reference file: " + args[2]);
+				System.out.println("Invalid reference genome file: " + args[2]);
 				System.exit(1);
 			}
 
