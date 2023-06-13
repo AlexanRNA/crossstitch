@@ -1,18 +1,17 @@
 #!/bin/bash
 
-# TODO add sed for svtype change and add correctSVs to the pipeline
 
 #set -xv
 set -e
 
 if [ $# -ne 7 ]
 then
-  echo "USAGE: crossstitch.sh phased_snps.vcf unphased_structural_variants.vcf long_reads.bam genome.fa outputprefix karyotype refine"
+  echo "USAGE: crossstitch.sh phased_snps.vcf phased_structural_variants.vcf long_reads.bam genome.fa outputprefix karyotype refine"
   echo ""
   echo "Details:"
   echo "  phased_snps.vcf:                   VCF file of phased SNP and indel variants. Recommend LongRanger (10X only) or HapCUT2 (HiC and/or 10X)"
-  echo "  phased_structural_variants.vcf:  VCF file of phased structural variants identified using Sniffles"
-  echo "  long_reads.bam:                    BAM file of long reads aligned with NGMLR"
+  echo "  phased_structural_variants.vcf:  VCF file of phased structural variants identified using Sniffles and LongPhase"
+  echo "  long_reads.bam:                    BAM file of long reads aligned with minimap2"
   echo "  genome.fa:                         Reference genome used"
   echo "  outputprefix:                      Prefix for output files"
   echo "  karyotype:                         "xy" or "xx", used to ensure sex chromosomes are correctly used"
@@ -87,6 +86,17 @@ VCFID=`head -5000 $PHASEDSNPS | grep '#CHROM' | awk '{print $10}'`
 
 #javac $BINDIR/*.java
 
+# run CorrectSVs to correct the insertion and duplication alt calls
+if [ ! -r $OUTPREFIX.corrected.vcf ]
+then
+  echo "Correcting SV calls"
+  (java -cp $BINDIR CorrectSVs $STRUCTURALVARIANTS $OUTPREFIX.corrected.vcf $GENOME) >& $OUTPREFIX.corrected.log
+fi
+
+# run sed to replace svtype DUP by svtype INS, so they are not removed
+echo "Changing duplications to insertions"
+sed 's/SVTYPE=DUP/SVTYPE=INS/g' $OUTPREFIX.corrected.vcf > $OUTPREFIX.corrected.nodup.vcf
+
 # run Iris
 if [[ $REFINE == "1" ]]
 then 
@@ -95,20 +105,21 @@ then
     echo "Refining SVs"
     #$BINDIR/../RefineInsertions/rebuild_external.sh
     #$BINDIR/../Iris/build.sh
-    java -cp $BINDIR/../Iris/src Iris genome_in=$GENOME vcf_in=$STRUCTURALVARIANTS reads_in=$LONGREADSBAM vcf_out=$OUTPREFIX.unsorted.refined.vcf threads=12
+    java -cp $BINDIR/../Iris/src Iris genome_in=$GENOME vcf_in=$OUTPREFIX.corrected.nodup.vcf reads_in=$LONGREADSBAM vcf_out=$OUTPREFIX.unsorted.refined.vcf threads=12
   fi
 else
   if [ ! -r $OUTPREFIX.refined.vcf ]
   then
     echo "Skip SV refinement"
-    cp $STRUCTURALVARIANTS $OUTPREFIX.refined.vcf
+    cp $OUTPREFIX.corrected.nodup.vcf $OUTPREFIX.unsorted.refined.vcf
   fi
 fi
 
 # sort the vcf before it goes to RemoveInvalidVariants to avoid errors
+echo "Sorting the SV file"
 bcftools sort -o $OUTPREFIX.refined.vcf $OUTPREFIX.unsorted.refined.vcf
 
-# rmeove invalid variants
+# remove invalid variants
 if [ ! -r $OUTPREFIX.scrubbed.vcf ]
 then
   echo "Scrubbing SV calls"
@@ -116,6 +127,7 @@ then
 fi
 
 # add code from Jonas to concatenate SNPs and SVs
+echo "concatenating the SNP and SV VCFs"
 echo $OUTPREFIX > samples
 bcftools reheader -s samples $PHASEDSNPS | bcftools view -o $OUTPREFIX.scrubbed.reheader.snv.indel.vcf.gz 
 bcftools reheader -s samples $OUTPREFIX.scrubbed.vcf | bcftools view -o $OUTPREFIX.scrubbed.reheader.svs.vcf.gz 
@@ -143,7 +155,7 @@ fi
 
 if [ ! -r $OUTPREFIX.spliced.scrubbed.vcf.gz ]
 then
-  echo "compressing spliced scrubbed vcf"
+  echo "Compressing spliced scrubbed vcf"
   $GZIP -c $OUTPREFIX.spliced.scrubbed.vcf > $OUTPREFIX.spliced.scrubbed.vcf.gz
 fi
 
@@ -152,7 +164,7 @@ then
   mkdir -p $AS
   pushd $AS
 
-  echo "constructing diploid sequence with SNPs and SVs"
+  echo "Constructing diploid sequence with SNPs and SVs"
   java -Xmx400000m -jar $VCF2DIPLOIDJAR -id $VCFID -pass -chr $GENOME -vcf ../$OUTPREFIX.spliced.scrubbed.vcf >& vcf2diploid.log
   popd
 fi
