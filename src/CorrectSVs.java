@@ -93,11 +93,10 @@ public class CorrectSVs {
 		{
 			return "";
 		}
+        
 		String faidxCommand = String.format("%s faidx %s %s:%d-%d", SAMTOOLS_PATH, refFn, chr, startPos, endPos);
-		ProcessBuilder processBuilder = new ProcessBuilder(faidxCommand.split(" "));
-		Process process = processBuilder.start();
-
-		InputStream seqStream = process.getInputStream();
+		Process child = Runtime.getRuntime().exec(faidxCommand);
+		InputStream seqStream = child.getInputStream();
 		Scanner seqInput = new Scanner(seqStream);
 
 		// Make sure it produced an actual output
