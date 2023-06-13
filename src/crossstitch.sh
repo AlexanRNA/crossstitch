@@ -94,7 +94,7 @@ touch $OUTPREFIX.corrected.vcf
 if [ ! -r $OUTPREFIX.corrected.vcf ]
 then
   echo "Correcting SV calls"
-  (java -cp $BINDIR CorrectSVs $STRUCTURALVARIANTS $OUTPREFIX.corrected.vcf $GENOME) >& $OUTPREFIX.corrected.log
+  java -cp $BINDIR CorrectSVs $STRUCTURALVARIANTS $OUTPREFIX.corrected.vcf $GENOME >& $OUTPREFIX.corrected.log
 fi
 
 # run sed to replace svtype DUP by svtype INS, so they are not removed
