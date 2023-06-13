@@ -1,6 +1,8 @@
 /*
  * Code for correcting SV sequence, particularly INS and INV
  * basically taking the code from CorrectSVs Java, but only keep the stuff for INV population
+ * Ignore any output from the report, since it will be wrong! It is the part of the code I left 
+ * unchanged 
  */
 
 import java.io.File;
