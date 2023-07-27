@@ -158,10 +158,13 @@ then
   (java -cp $BINDIR RemoveInvalidVariants -o $KARYOTYPE $OUTPREFIX.spliced.vcf $OUTPREFIX.spliced.scrubbed.vcf) >& $OUTPREFIX.spliced.scrubbed.log
 fi
 
+# in case nothing has worked and there is still <INV> in alt allele field
+sed 's/<INV>/N/g' $OUTPREFIX.spliced.scrubbed.vcf > $OUTPREFIX.spliced.scrubbed.inv.vcf
+
 if [ ! -r $OUTPREFIX.spliced.scrubbed.vcf.gz ]
 then
   echo "Compressing spliced scrubbed vcf"
-  $GZIP -c $OUTPREFIX.spliced.scrubbed.vcf > $OUTPREFIX.spliced.scrubbed.vcf.gz
+  $GZIP -c $OUTPREFIX.spliced.scrubbed.inv.vcf > $OUTPREFIX.spliced.scrubbed.vcf.gz
 fi
 
 if [ ! -r $AS ]
