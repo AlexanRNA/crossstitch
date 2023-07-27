@@ -237,7 +237,7 @@ public class CorrectSVs {
 
 					String oldGenotype = v.genotype;
 
-					if (v.type.equals("INS") || v.type.equals("DEL") || v.type.equals("INV") || v.type.equals("DUP")) {
+					if (v.type.equals("INS") || v.type.equals("DEL") || v.type.equals("DUP")) {
 						if (Math.abs(v.svlen) <= MAX_SV_LEN) {
 
 							// This is the sequence length of the SV and is used for logging
@@ -268,7 +268,7 @@ public class CorrectSVs {
 								for (int i = 0; i < v.svlen; i++) {
 									refBuilder.append("N");
 								}
-								if (v.alt.equals("<INS>")){
+								if (v.alt.equals("<INS>") || v.alt.equals("<DUP>")){
 									// if the alt seq is <INS>, replace it with Ns where the number of Ns corresponds
 									//to the length of INS
 									v.alt = refBuilder.toString();
