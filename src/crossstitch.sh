@@ -86,6 +86,10 @@ VCFID=`head -5000 $PHASEDSNPS | grep '#CHROM' | awk '{print $10}'`
 
 #javac $BINDIR/*.java
 
+# run sed to replace svtype DUP by svtype INS, so they are refined by Iris
+echo "Changing duplications to insertions"
+sed 's/SVTYPE=DUP/SVTYPE=INS/g' $STRUCTURALVARIANTS > $OUTPREFIX.nodup.vcf
+
 # create dummy file for CorrectSVs to be able to run
 echo "Creating blank output VCF" 
 touch $OUTPREFIX.corrected.vcf
@@ -93,12 +97,10 @@ touch $OUTPREFIX.corrected.vcf
 # run CorrectSVs to correct the insertion and duplication alt calls
 
 echo "Correcting SV calls"
-java -cp $BINDIR CorrectSVs $STRUCTURALVARIANTS $OUTPREFIX.corrected.vcf $GENOME >& $OUTPREFIX.corrected.log
+java -cp $BINDIR CorrectSVs $OUTPREFIX.nodup.vcf $OUTPREFIX.corrected.vcf $GENOME >& $OUTPREFIX.corrected.log
 
 
-# run sed to replace svtype DUP by svtype INS, so they are not removed
-echo "Changing duplications to insertions"
-sed 's/SVTYPE=DUP/SVTYPE=INS/g' $OUTPREFIX.corrected.vcf > $OUTPREFIX.corrected.nodup.vcf
+
 
 # run Iris
 if [[ $REFINE == "1" ]]
@@ -108,13 +110,13 @@ then
     echo "Refining SVs"
     #$BINDIR/../RefineInsertions/rebuild_external.sh
     #$BINDIR/../Iris/build.sh
-    java -cp $BINDIR/../Iris/src Iris genome_in=$GENOME vcf_in=$OUTPREFIX.corrected.nodup.vcf reads_in=$LONGREADSBAM vcf_out=$OUTPREFIX.unsorted.refined.vcf threads=12
+    java -cp $BINDIR/../Iris/src Iris genome_in=$GENOME vcf_in=$OUTPREFIX.corrected.vcf reads_in=$LONGREADSBAM vcf_out=$OUTPREFIX.unsorted.refined.vcf threads=12
   fi
 else
   if [ ! -r $OUTPREFIX.refined.vcf ]
   then
     echo "Skip SV refinement"
-    cp $OUTPREFIX.corrected.nodup.vcf $OUTPREFIX.unsorted.refined.vcf
+    cp $OUTPREFIX.corrected.vcf $OUTPREFIX.unsorted.refined.vcf
   fi
 fi
 
